@@ -1,2 +1,2 @@
 # GA---Beatle
-Um simples algoritmo genético
+Um simples algoritmo evolutivo 
