@@ -1,2 +1,2 @@
-# GA---Beatle
+# AG---Beatle
 Um simples algoritmo evolutivo 
