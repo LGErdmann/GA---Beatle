@@ -135,39 +135,73 @@ def desenhar_besouro(rgb, pose):
     return img
 
 
+# no tema acai, cada besouro nasce com uma cor viva e evolui ate um tom de acai
+CORES_INICIAIS = [
+    (230, 57, 70), (42, 157, 143), (244, 162, 97), (69, 123, 157), (233, 196, 106),
+    (168, 218, 220), (114, 183, 76), (231, 111, 81), (0, 150, 199), (255, 183, 3),
+]
+INICIO_EVOLUCAO = 8     # quadro em que as cores comecam a mudar
+DURACAO_EVOLUCAO = 40   # quadros que cada besouro leva para virar acai
+ATRASO_ENTRE = 3        # cada besouro comeca um pouco depois do anterior
+DEGRAUS = 16            # tons intermediarios da transicao
+
+
+def mistura(a, b, f):
+    return tuple(int(round(x + (y - x) * f)) for x, y in zip(a, b))
+
+
+def progresso(t, k):
+    f = (t - INICIO_EVOLUCAO - k * ATRASO_ENTRE) / DURACAO_EVOLUCAO
+    f = max(0.0, min(1.0, f))
+    f = f * f * (3 - 2 * f)  # suaviza o inicio e o fim
+    return round(f * DEGRAUS) / DEGRAUS
+
+
 def main():
     cores = CORES_ACAI if ACAI else cores_da_evolucao()
-    sprites = [[desenhar_besouro(c, p) for p in (0, 1)] for c in cores]
+    cache = {}
+
+    def sprite(rgb, pose):
+        if (rgb, pose) not in cache:
+            cache[(rgb, pose)] = desenhar_besouro(rgb, pose)
+        return cache[(rgb, pose)]
+
+    def cor_no_quadro(k, t):
+        if not ACAI:
+            return tuple(cores[k])
+        return mistura(CORES_INICIAIS[k], cores[k], progresso(t, k))
 
     # cada coluna tem dois besouros, a meio periodo de distancia
     besouros = []
-    for k, _ in enumerate(cores):
+    for k in range(len(cores)):
         col = k % COLUNAS
         x = 24 + col * (LARG_BESOURO + 16) - 10
         y0 = (k // COLUNAS) * (PERIODO / 2) + col * 57
         fase = (col * 3 + k // COLUNAS) % 2  # patas fora de sincronia
-        besouros.append((sprites[k], x, y0, fase))
+        besouros.append((k, x, y0, fase))
 
     quadros = []
     for t in range(QUADROS):
         q = Image.new("RGB", (LARGURA, ALTURA), FUNDO)
-        for spr, x, y0, fase in besouros:
+        usadas = [FUNDO, BORDA]
+        for k, x, y0, fase in besouros:
             pose = ((t // TROCA_PATA) + fase) % 2
+            rgb = cor_no_quadro(k, t)
+            usadas += [rgb, clarear(rgb)]
+            spr = sprite(rgb, pose)
             y = (y0 - t * PASSO) % PERIODO - (ALT_BESOURO + 70) + 20
             for yy in (y, y + PERIODO):
                 if -ALT_BESOURO - 8 < yy < ALTURA:
-                    q.paste(spr[pose], (int(x), int(yy)), spr[pose])
+                    q.paste(spr, (int(x), int(yy)), spr)
         ImageDraw.Draw(q).rounded_rectangle(
             (0, 0, LARGURA - 1, ALTURA - 1), radius=10, outline=BORDA
         )
-        quadros.append(q)
-
-    # paleta unica para todos os quadros (sem tremido de cor)
-    tons = [FUNDO, BORDA, (255, 255, 255)] + list(cores) + [clarear(c) for c in cores]
-    pal = Image.new("P", (1, 1))
-    flat = [v for c in tons for v in c]
-    pal.putpalette(flat + flat[:3] * (256 - len(tons)))
-    quadros = [q.quantize(palette=pal, dither=Image.Dither.NONE) for q in quadros]
+        # paleta com as cores exatas deste quadro (sem pontilhado)
+        tons = list(dict.fromkeys(usadas))
+        pal = Image.new("P", (1, 1))
+        flat = [v for c in tons for v in c]
+        pal.putpalette(flat + flat[:3] * (256 - len(tons)))
+        quadros.append(q.quantize(palette=pal, dither=Image.Dither.NONE))
 
     os.makedirs("assets", exist_ok=True)
     saida = "assets/besouros-acai.gif" if ACAI else "assets/besouros.gif"
