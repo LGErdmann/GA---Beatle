@@ -1,10 +1,12 @@
 """Gera assets/besouros.gif: besouros em ASCII, coloridos pelo algoritmo
 genetico, andando pela tela em loop.
 
-Uso: pip install pillow && python gerar_gif.py
+Uso: pip install pillow && python gerar_gif.py           (cores da evolucao)
+     pip install pillow && python gerar_gif.py --acai    (tema acai)
 """
 import os
 import random
+import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -82,8 +84,18 @@ LH = 14
 LARG_BESOURO = int(32 * CW)
 ALT_BESOURO = len(BESOURO) * LH
 
-FUNDO = (246, 248, 250)
-BORDA = (208, 215, 222)
+ACAI = "--acai" in sys.argv
+if ACAI:
+    FUNDO = (27, 10, 31)
+    BORDA = (58, 29, 66)
+    CORES_ACAI = [
+        (201, 160, 220), (166, 108, 193), (142, 68, 173), (183, 132, 201),
+        (155, 89, 182), (216, 180, 226), (124, 58, 150), (190, 120, 210),
+        (148, 85, 170), (175, 140, 200),
+    ]
+else:
+    FUNDO = (246, 248, 250)
+    BORDA = (208, 215, 222)
 COLUNAS = 5
 LARGURA = COLUNAS * (LARG_BESOURO + 16) + 24
 ALTURA = 380
@@ -94,7 +106,7 @@ TROCA_PATA = 4                     # quadros por passo das patas
 DURACAO_MS = 70
 
 
-def clarear(rgb, f=0.55):
+def clarear(rgb, f=0.45):
     return tuple(int(c + (255 - c) * f) for c in rgb)
 
 
@@ -124,7 +136,7 @@ def desenhar_besouro(rgb, pose):
 
 
 def main():
-    cores = cores_da_evolucao()
+    cores = CORES_ACAI if ACAI else cores_da_evolucao()
     sprites = [[desenhar_besouro(c, p) for p in (0, 1)] for c in cores]
 
     # cada coluna tem dois besouros, a meio periodo de distancia
@@ -158,11 +170,12 @@ def main():
     quadros = [q.quantize(palette=pal, dither=Image.Dither.NONE) for q in quadros]
 
     os.makedirs("assets", exist_ok=True)
+    saida = "assets/besouros-acai.gif" if ACAI else "assets/besouros.gif"
     quadros[0].save(
-        "assets/besouros.gif", save_all=True, append_images=quadros[1:],
+        saida, save_all=True, append_images=quadros[1:],
         duration=DURACAO_MS, loop=0, optimize=True, disposal=1,
     )
-    print("assets/besouros.gif gerado")
+    print(saida, "gerado")
 
 
 if __name__ == "__main__":
