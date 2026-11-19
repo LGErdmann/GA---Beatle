@@ -3,7 +3,7 @@
 Um algoritmo genético simples em Python que evolui uma população de besouros coloridos.
 
 <p align="center">
-  <img src="assets/besouros.svg" alt="Besouros ao longo das gerações" width="100%">
+  <img src="assets/besouros.gif" alt="Besouros andando" width="100%">
 </p>
 
 ## Como funciona
@@ -31,10 +31,10 @@ pip install colr
 python main.py
 ```
 
-Para gerar de novo a imagem desta página:
+Para gerar de novo a animação desta página (precisa do `pillow`):
 
 ```bash
-python gerar_banner.py
+python gerar_gif.py
 ```
 
 ## Estrutura
@@ -43,4 +43,4 @@ python gerar_banner.py
 |---|---|
 | `G.py` | Indivíduo, população, seleção, cruzamento e mutação |
 | `main.py` | Loop de gerações e desenho dos besouros no terminal |
-| `gerar_banner.py` | Gera `assets/besouros.svg` |
+| `gerar_gif.py` | Gera `assets/besouros.gif` |
